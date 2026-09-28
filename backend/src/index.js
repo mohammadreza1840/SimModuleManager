@@ -67,6 +67,7 @@ async function start() {
         throw error;
     }
     const receiver = new ReceiverManager(prisma);
+    app.set('receiverManager', receiver);
     const jobs = new JobWorker(prisma);
     const health = startHealthCheckDaemon(prisma);
     const retention = startRetentionDaemon(prisma);

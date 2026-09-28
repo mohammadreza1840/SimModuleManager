@@ -78,6 +78,50 @@ router.get('/', async (req, res) => {
     res.json(devices.map(({ device_key_hash, ...device }) => ({ ...device, credential_configured: Boolean(device_key_hash) })));
 });
 
+router.get('/:deviceId/live-audio', async (req, res) => {
+    if (req.auth.role !== 'admin' && req.auth.deviceIds && !req.auth.deviceIds.includes(req.params.deviceId)) return res.status(403).json({ error: 'Device access denied' });
+    
+    const receiverManager = req.app.get('receiverManager');
+    if (!receiverManager) return res.status(503).json({ error: 'Receiver service is unavailable' });
+
+    const receiver = receiverManager.sessions.get(req.params.deviceId);
+    if (!receiver || !receiver.device) return res.status(404).json({ error: 'Device audio stream is not active' });
+
+    res.setHeader('Content-Type', 'audio/wav');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Cache-Control', 'no-store');
+
+    const sampleRate = receiver.device.input_sample_rate || 44240;
+    const header = Buffer.alloc(44);
+    header.write('RIFF', 0);
+    header.writeUInt32LE(0xFFFFFFFF, 4);
+    header.write('WAVE', 8);
+    header.write('fmt ', 12);
+    header.writeUInt32LE(16, 16);
+    header.writeUInt16LE(1, 20);
+    header.writeUInt16LE(1, 22);
+    header.writeUInt32LE(sampleRate, 24);
+    header.writeUInt32LE(sampleRate * 2, 28);
+    header.writeUInt16LE(2, 32);
+    header.writeUInt16LE(16, 34);
+    header.write('data', 36);
+    header.writeUInt32LE(0xFFFFFFFF, 40);
+
+    res.write(header);
+
+    const onAudio = (pcmChunk) => {
+        const buf = Buffer.from(pcmChunk.buffer, pcmChunk.byteOffset, pcmChunk.byteLength);
+        res.write(buf);
+    };
+
+    receiver.on('audio', onAudio);
+
+    req.on('close', () => {
+        receiver.off('audio', onAudio);
+    });
+});
+
 router.patch('/:deviceId', async (req, res) => {
     if (req.auth.role !== 'admin' && req.auth.deviceIds && !req.auth.deviceIds.includes(req.params.deviceId)) return res.status(403).json({ error: 'Device access denied' });
     const allowed = ['label', 'ip_address', 'active', 'input_sample_rate', 'output_sample_rate', 'audio_profile'];

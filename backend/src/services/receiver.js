@@ -6,10 +6,13 @@ const { Pcm16Assembler, ByteRingBuffer } = require('../audio/pcm');
 const { WavAppender } = require('../audio/wav');
 const { safeCallPath } = require('./storage');
 
+const EventEmitter = require('node:events');
+
 function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-class DeviceReceiver {
+class DeviceReceiver extends EventEmitter {
     constructor(prisma, device, owner, options = {}) {
+        super();
         this.prisma = prisma;
         this.device = device;
         this.owner = owner;
@@ -91,6 +94,7 @@ class DeviceReceiver {
                         }
                     }
                     if (this.nextSampleCounter !== null) this.nextSampleCounter += BigInt(pcm.length / 2);
+                    this.emit('audio', pcm);
                     this.throttledAudioHeartbeat();
                 });
                 response.on('end', () => reject(new Error('Audio stream ended')));
