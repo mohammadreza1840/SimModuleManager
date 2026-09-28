@@ -53,12 +53,12 @@ const char* WIFI_SSID       = CONFIG_WIFI_SSID;
 const char* WIFI_PASS       = CONFIG_WIFI_PASS;
 
 // --- Static IP Configuration ---
-// تغییر این مقادیر متناسب با شبکه شما الزامی است
-IPAddress local_IP(CONFIG_STATIC_IP);
-IPAddress gateway(CONFIG_STATIC_GATEWAY);
-IPAddress subnet(CONFIG_STATIC_SUBNET);
-IPAddress primaryDNS(CONFIG_STATIC_DNS1);   // Optional
-IPAddress secondaryDNS(CONFIG_STATIC_DNS2); // Optional
+// (Commented out for DHCP)
+// IPAddress local_IP(CONFIG_STATIC_IP);
+// IPAddress gateway(CONFIG_STATIC_GATEWAY);
+// IPAddress subnet(CONFIG_STATIC_SUBNET);
+// IPAddress primaryDNS(CONFIG_STATIC_DNS1);   // Optional
+// IPAddress secondaryDNS(CONFIG_STATIC_DNS2); // Optional
 
 // --- Central Panel Config ---
 const char* PANEL_URL       = PANEL_BASE_URL;
@@ -992,10 +992,10 @@ void setup() {
     initModem();
     initI2S();
 
-    SerialMon.printf("[WIFI] Configuring Static IP...\n");
-    if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-        SerialMon.println("[WIFI WARN] Failed to configure Static IP");
-    }
+    // SerialMon.printf("[WIFI] Configuring Static IP...\n");
+    // if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+    //     SerialMon.println("[WIFI WARN] Failed to configure Static IP");
+    // }
 
     SerialMon.printf("[WIFI] Connecting to '%s'...\n", WIFI_SSID);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
