@@ -49,16 +49,16 @@ static_assert(MODEM_AUDIO_CHANNEL == 0 || MODEM_AUDIO_CHANNEL == 1,
 HardwareSerial SerialAT(1);
 
 // --- Network & Config ---
-const char* WIFI_SSID       = "Otaq";
-const char* WIFI_PASS       = "Pour1412#";
+const char* WIFI_SSID       = CONFIG_WIFI_SSID;
+const char* WIFI_PASS       = CONFIG_WIFI_PASS;
 
 // --- Static IP Configuration ---
 // تغییر این مقادیر متناسب با شبکه شما الزامی است
-IPAddress local_IP(10, 10, 30, 201);
-IPAddress gateway(10, 10, 30, 1);
-IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(8, 8, 8, 8);   // Optional
-IPAddress secondaryDNS(8, 8, 4, 4); // Optional
+IPAddress local_IP(CONFIG_STATIC_IP);
+IPAddress gateway(CONFIG_STATIC_GATEWAY);
+IPAddress subnet(CONFIG_STATIC_SUBNET);
+IPAddress primaryDNS(CONFIG_STATIC_DNS1);   // Optional
+IPAddress secondaryDNS(CONFIG_STATIC_DNS2); // Optional
 
 // --- Central Panel Config ---
 const char* PANEL_URL       = PANEL_BASE_URL;

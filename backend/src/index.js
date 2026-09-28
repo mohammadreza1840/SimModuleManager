@@ -39,7 +39,7 @@ function createApp(prisma) {
 
 function listen(app, port) {
     return new Promise((resolve, reject) => {
-        const server = app.listen(port);
+        const server = app.listen(port, '0.0.0.0');
         const onError = error => reject(error);
         server.once('error', onError);
         server.once('listening', () => {
