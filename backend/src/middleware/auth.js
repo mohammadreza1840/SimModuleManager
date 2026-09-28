@@ -7,7 +7,9 @@ function hashToken(token) {
 
 function bearer(req) {
     const value = req.get('authorization') || '';
-    return value.startsWith('Bearer ') ? value.slice(7) : '';
+    if (value.startsWith('Bearer ')) return value.slice(7);
+    if (req.query.token) return req.query.token;
+    return '';
 }
 
 function safeEqual(a, b) {
