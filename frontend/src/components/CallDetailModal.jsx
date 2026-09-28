@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Copy, RefreshCw, Search, X } from 'lucide-react';
-import { api } from '../api';
+import { api, API_BASE } from '../api';
 import AudioAsset from './AudioAsset';
 
 const labels = { ready: 'آماده', recording: 'در حال ضبط', queued: 'در صف', processing: 'در حال پردازش', transcribing: 'در حال تبدیل', failed: 'ناموفق', waiting: 'منتظر', incomplete: 'ناقص', skipped: 'رد شده', no_signal: 'بدون سیگنال' };
@@ -9,6 +9,10 @@ const profileLabels = { raw: 'خام', mild: 'شفاف‌سازی متعادل',
 export default function CallDetailModal({ callId, onClose, onChanged }) {
   const [call, setCall] = useState(null);
   const [search, setSearch] = useState('');
+  
+  const token = sessionStorage.getItem('simcard_api_token') || import.meta.env.VITE_API_TOKEN || '';
+  const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+
   const load = useCallback(() => api.get(`/calls/${callId}`).then(({ data }) => setCall(data)), [callId]);
   useEffect(() => { const initial = setTimeout(load, 0); const timer = setInterval(load, 3000); return () => { clearTimeout(initial); clearInterval(timer); }; }, [load]);
   const transcript = (() => {
@@ -32,6 +36,23 @@ export default function CallDetailModal({ callId, onClose, onChanged }) {
           <div><span>نرخ ورودی / خروجی</span><b>{call.input_sample_rate || '؟'} / {call.output_sample_rate || '؟'} Hz</b></div>
           <div><span>پروفایل</span><b>{profileLabels[call.audio_profile] || profileLabels.mild}</b></div>
         </div>
+        
+        {(call.state === 'active' || call.state === 'ringing') && (
+          <div className="live-stream-player" style={{ marginTop: '20px', background: 'rgba(255, 68, 68, 0.1)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255, 68, 68, 0.3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ width: '10px', height: '10px', background: '#ff4444', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #ff4444' }}></span>
+              <strong style={{ color: '#ff4444' }}>پخش زنده مکالمه</strong>
+            </div>
+            <audio 
+               src={`${API_BASE}/devices/${call.deviceId}/live-audio${tokenQuery}`}
+               controls 
+               autoPlay
+               style={{ height: '36px', width: '100%' }}
+               title="پخش زنده تماس"
+            />
+          </div>
+        )}
+
         {call.original_available && <AudioAsset callId={call.id} variant="original" label="فایل اصلی" />}
         {call.processed_available && <AudioAsset callId={call.id} variant="processed" label="نسخهٔ پردازش‌شده"
           revision={`${call.processing_version || ''}:${call.processing_attempts}:${call.updated_at}`} />}
