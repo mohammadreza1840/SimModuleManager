@@ -117,6 +117,7 @@ enum SimState {
 
 SimState currentState = SIM_MISSING;
 unsigned long lastSimCheckTime = 0;
+int simCheckFailCount = 0;
 String incomingSmsBuffer = "";
 String currentICCID = ""; // شناسه یکتای سیمکارت فعلی
 
@@ -1061,10 +1062,12 @@ void loop() {
         case SIM_MISSING:
             if (millis() - lastSimCheckTime > 3000) {
                 lastSimCheckTime = millis();
-                String cpin = sendAT("AT+CPIN?", 1500, true);
+                sendAT("AT", 500, true); // Wake up modem & sync baud rate
+                String cpin = sendAT("AT+CPIN?", 2000, true);
                 if (cpin.indexOf("READY") != -1) {
                     SerialMon.println("[SIM] SIM Card Detected. Initializing...");
                     currentState = SIM_INIT;
+                    simCheckFailCount = 0;
                 }
             }
             break;
@@ -1113,14 +1116,21 @@ void loop() {
             // Check SIM status every 10 seconds to detect removal
             if (millis() - lastSimCheckTime > 10000) {
                 lastSimCheckTime = millis();
-                String cpin = sendAT("AT+CPIN?", 1500, true);
-                if (cpin.indexOf("ERROR") != -1 || cpin.length() == 0) {
-                    SerialMon.println("[SIM] SIM Card removed or error! Going to MISSING state.");
-                    currentState = SIM_MISSING;
-                    modemAudioConfigured = false;
-                    panelRegistered = false;
-                    currentICCID = "";
-                    currentPhone = "";
+                String cpin = sendAT("AT+CPIN?", 2000, true);
+                if (cpin.indexOf("READY") != -1) {
+                    simCheckFailCount = 0;
+                } else if (cpin.indexOf("ERROR") != -1 || cpin.length() == 0) {
+                    simCheckFailCount++;
+                    SerialMon.printf("[SIM] Warning: CPIN check failed (%d/3)\n", simCheckFailCount);
+                    if (simCheckFailCount >= 3) {
+                        SerialMon.println("[SIM] SIM Card removed or error! Going to MISSING state.");
+                        currentState = SIM_MISSING;
+                        modemAudioConfigured = false;
+                        panelRegistered = false;
+                        currentICCID = "";
+                        currentPhone = "";
+                        simCheckFailCount = 0;
+                    }
                 }
             }
             break;
