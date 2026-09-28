@@ -1145,13 +1145,14 @@ void loop() {
     }
 
     // Modem state, never audio energy, controls the call lifecycle.
-    if (currentState == SIM_READY && callState != CALL_IDLE && millis() - lastClccPoll >= 700) {
+    unsigned long pollInterval = (callState == CALL_ACTIVE) ? 2000 : 700;
+    if (currentState == SIM_READY && callState != CALL_IDLE && millis() - lastClccPoll >= pollInterval) {
         lastClccPoll = millis();
         callSeenInLastClcc = false;
-        String clcc = sendAT("AT+CLCC", 900, true);
+        String clcc = sendAT("AT+CLCC", (callState == CALL_ACTIVE) ? 1500 : 900, true);
         if (callState == CALL_ACTIVE) {
             if (callSeenInLastClcc) missingActiveClccPolls = 0;
-            else if (++missingActiveClccPolls >= 2) {
+            else if (++missingActiveClccPolls >= 4) {
                 isRecording = false;
                 finishCall("remote_hangup");
             }
