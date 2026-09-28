@@ -1,0 +1,7 @@
+.DS_Store
+.vscode/
+.idea/
+.claude/
+.cursor/
+.devin/
+.agents/
